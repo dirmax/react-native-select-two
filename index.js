@@ -1,12 +1,24 @@
 //import liraries
-import React, { Component } from 'react';
-import { Text, StyleSheet, TouchableOpacity, View, FlatList, TextInput, Dimensions, Animated, Platform } from 'react-native';
+import React, {Component} from 'react';
+import {
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    View,
+    FlatList,
+    TextInput,
+    Dimensions,
+    Animated,
+    Platform,
+    Image,
+} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Modal from 'react-native-modal';
 import Button from './lib/Button';
 import TagItem from './lib/TagItem';
 import utilities from './lib/utilities';
 import PropTypes from 'prop-types';
+import PinImage from './assets/img/scroll-pin.png';
 
 const { height } = Dimensions.get('window');
 const INIT_HEIGHT = height * 0.6;
@@ -20,7 +32,7 @@ class Select2 extends Component {
         colorTheme: '#16a45f',
         buttonTextStyle: {},
         buttonStyle: {},
-        showSearchBox: true
+        showSearchBox: true,
     }
     state = {
         show: false,
@@ -29,13 +41,14 @@ class Select2 extends Component {
         data: [],
         keyword: ''
     }
-    animatedHeight = new Animated.Value(INIT_HEIGHT);
+    modalHeight = this.props.modalHeight || INIT_HEIGHT;
+    animatedHeight = new Animated.Value(this.modalHeight);
 
     componentDidMount() {
         this.init();
     };
 
-    componentWillReceiveProps(newProps) {
+    UNSAFE_componentWillReceiveProps(newProps) {
         this.init(newProps);
     }
 
@@ -94,7 +107,13 @@ class Select2 extends Component {
         data.map(item => {
             if (item.checked) selectedItem.push(item);
         })
-        this.setState({ data, selectedItem });
+
+        this.setState({
+            data,
+            selectedItem,
+            preSelectedItem: selectedItem,
+            show: isSelectSingle ? false : this.state.show,
+        });
     }
     keyExtractor = (item, idx) => idx.toString();
     renderItem = ({ item, idx }) => {
@@ -127,11 +146,22 @@ class Select2 extends Component {
 
     render() {
         let {
-            style, title, onSelect, onRemoveItem, popupTitle, colorTheme,
-            isSelectSingle, cancelButtonText, selectButtonText, searchPlaceHolderText,
-            selectedTitlteStyle, buttonTextStyle, buttonStyle, showSearchBox
+            style,
+            title,
+            onSelect,
+            onRemoveItem,
+            popupTitle,
+            colorTheme,
+            isSelectSingle,
+            cancelButtonText,
+            selectButtonText,
+            searchPlaceHolderText,
+            selectedTitlteStyle,
+            buttonTextStyle,
+            buttonStyle,
+            showSearchBox,
         } = this.props;
-        let { show, selectedItem, preSelectedItem } = this.state;
+        let {show, selectedItem, preSelectedItem} = this.state;
         return (
             <TouchableOpacity
                 onPress={this.showModal}
@@ -141,18 +171,34 @@ class Select2 extends Component {
                     onBackdropPress={this.closeModal}
                     style={{
                         justifyContent: 'flex-end',
-                        margin: 0
+                        margin: 0,
                     }}
-                    useNativeDriver={true}
+                    swipeDirection="down"
+                    onSwipeComplete={() => this.setState({show: false})}
+                    propagateSwipe={true}
+                    // useNativeDriver={true}
                     animationInTiming={300}
                     animationOutTiming={300}
                     hideModalContentWhileAnimating
+                    backdropOpacity={0.6}
+                    backdropTransitionOutTiming={0}
                     isVisible={show}>
                     <Animated.View style={[styles.modalContainer, { height: this.animatedHeight }]}>
                         <View>
-                            <Text style={[styles.title, this.defaultFont, { color: colorTheme }]}>
-                                {popupTitle || title}
-                            </Text>
+                            <View
+                                style={{
+                                    flex: 1,
+                                    alignItems: 'center',
+                                    marginTop: -5,
+                                    marginBottom: 15,
+                                }}>
+                                    <Image source={PinImage} />
+                            </View>
+                            <View>
+                                <Text style={[styles.title, this.defaultFont]}>
+                                    {popupTitle || title}
+                                </Text>
+                            </View>
                         </View>
                         <View style={styles.line} />
                         {
@@ -166,13 +212,13 @@ class Select2 extends Component {
                                     onChangeText={keyword => this.setState({ keyword })}
                                     onFocus={() => {
                                         Animated.spring(this.animatedHeight, {
-                                            toValue: INIT_HEIGHT + (Platform.OS === 'ios' ? height * 0.2 : 0),
+                                            toValue: this.modalHeight + (Platform.OS === 'ios' ? height * 0.2 : 0),
                                             friction: 7
                                         }).start();
                                     }}
                                     onBlur={() => {
                                         Animated.spring(this.animatedHeight, {
-                                            toValue: INIT_HEIGHT,
+                                            toValue: this.modalHeight,
                                             friction: 7
                                         }).start();
                                     }}
@@ -186,34 +232,6 @@ class Select2 extends Component {
                             renderItem={this.renderItem}
                             ListEmptyComponent={this.renderEmpty}
                         />
-
-                        <View style={styles.buttonWrapper}>
-                            <Button
-                                defaultFont={this.defaultFont}
-                                onPress={() => {
-                                    this.cancelSelection();
-                                }}
-                                title={cancelButtonText}
-                                textColor={colorTheme}
-                                backgroundColor='#fff'
-                                textStyle={buttonTextStyle}
-                                style={[styles.button, buttonStyle, { marginRight: 5, marginLeft: 10, borderWidth: 1, borderColor: colorTheme }]} />
-                            <Button
-                                defaultFont={this.defaultFont}
-                                onPress={() => {
-                                    let selectedIds = [], selectedObjectItems = [];
-                                    selectedItem.map(item => {
-                                        selectedIds.push(item.id);
-                                        selectedObjectItems.push(item);
-                                    })
-                                    onSelect && onSelect(selectedIds, selectedObjectItems);
-                                    this.setState({ show: false, keyword: '', preSelectedItem: selectedItem });
-                                }}
-                                title={selectButtonText}
-                                backgroundColor={colorTheme}
-                                textStyle={buttonTextStyle}
-                                style={[styles.button, buttonStyle, { marginLeft: 5, marginRight: 10 }]} />
-                        </View>
                     </Animated.View>
                 </Modal>
                 {
@@ -260,15 +278,28 @@ class Select2 extends Component {
 // define your styles
 const styles = StyleSheet.create({
     container: {
-        width: '100%', minHeight: 45, borderRadius: 2, paddingHorizontal: 16,
-        flexDirection: 'row', alignItems: 'center', borderWidth: 1,
-        borderColor: '#cacaca', paddingVertical: 4
+        width: '100%',
+        minHeight: 45,
+        borderRadius: 4,
+        paddingHorizontal: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ced4da',
+        paddingVertical: 6,
     },
     modalContainer: {
-        paddingTop: 16, backgroundColor: '#fff', borderTopLeftRadius: 8, borderTopRightRadius: 8
+        paddingTop: 16,
+        backgroundColor: '#fff',
+        borderTopLeftRadius: 10,
+        borderTopRightRadius: 10,
     },
     title: {
-        fontSize: 16, marginBottom: 16, width: '100%', textAlign: 'center'
+        fontSize: 16,
+        fontWeight: 'bold',
+        paddingBottom: 16,
+        width: '100%',
+        paddingHorizontal: 16,
     },
     line: {
         height: 1, width: '100%', backgroundColor: '#cacaca'
@@ -290,8 +321,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row', flexWrap: 'wrap'
     },
     listOption: {
-        paddingHorizontal: 24,
-        paddingTop: 1, marginTop: 16
+        paddingHorizontal: 16,
     },
     itemWrapper: {
         borderBottomWidth: 1, borderBottomColor: '#eaeaea',
