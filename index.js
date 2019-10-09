@@ -33,6 +33,7 @@ class Select2 extends Component {
         buttonTextStyle: {},
         buttonStyle: {},
         showSearchBox: true,
+        onItemSelected: () => {},
     }
     state = {
         show: false,
@@ -114,6 +115,8 @@ class Select2 extends Component {
             preSelectedItem: selectedItem,
             show: isSelectSingle ? false : this.state.show,
         });
+
+        this.props.onItemSelected(selectedItem);
     }
     keyExtractor = (item, idx) => idx.toString();
     renderItem = ({ item, idx }) => {
@@ -353,7 +356,8 @@ Select2.propTypes = {
     isSelectSingle: PropTypes.bool,
     showSearchBox: PropTypes.bool,
     cancelButtonText: PropTypes.string,
-    selectButtonText: PropTypes.string
+    selectButtonText: PropTypes.string,
+    onItemSelected: PropTypes.func,
 }
 
 //make this component available to the app
