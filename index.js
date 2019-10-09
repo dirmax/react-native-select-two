@@ -34,34 +34,38 @@ class Select2 extends Component {
         buttonStyle: {},
         showSearchBox: true,
         onItemSelected: () => {},
+        defaultSelectedId: [],
     }
     state = {
         show: false,
         preSelectedItem: [],
-        selectedItem: [],
-        data: [],
+        data: this.props.data,
         keyword: ''
     }
     modalHeight = this.props.modalHeight || INIT_HEIGHT;
     animatedHeight = new Animated.Value(this.modalHeight);
 
     componentDidMount() {
-        this.init();
-    };
+        var selectedItems = [];
+        const {defaultSelectedId, data} = this.props;
 
-    UNSAFE_componentWillReceiveProps(newProps) {
-        this.init(newProps);
-    }
+        data.forEach(item => {
+            item.checked = false;
 
-    init(newProps) {
-        let preSelectedItem = [];
-        let { data } = newProps || this.props;
-        data.map(item => {
-            if (item.checked) {
-                preSelectedItem.push(item);
+            for (let i in defaultSelectedId) {
+                let id = defaultSelectedId[i];
+
+                if (item.id == id) {
+                    item.checked = true;
+                    selectedItems.push(item);
+                    break;
+                }
             }
-        })
-        this.setState({ data, preSelectedItem });
+        });
+
+        console.log('data', data);
+
+        this.setState({preSelectedItem: selectedItems});
     }
 
     get dataRender() {
@@ -80,20 +84,6 @@ class Select2 extends Component {
         return defaultFontName ? { fontFamily: defaultFontName } : {};
     }
 
-    cancelSelection() {
-        let { data, preSelectedItem } = this.state;
-        data.map(item => {
-            item.checked = false;
-            for (let _selectedItem of preSelectedItem) {
-                if (item.id === _selectedItem.id) {
-                    item.checked = true;
-                    break;
-                }
-            }
-        });
-        this.setState({ data, show: false, keyword: '', selectedItem: preSelectedItem });
-    }
-
     onItemSelected = (item, isSelectSingle) => {
         let selectedItem = [];
         let { data } = this.state;
@@ -110,8 +100,6 @@ class Select2 extends Component {
         })
 
         this.setState({
-            data,
-            selectedItem,
             preSelectedItem: selectedItem,
             show: isSelectSingle ? false : this.state.show,
         });
@@ -151,20 +139,15 @@ class Select2 extends Component {
         let {
             style,
             title,
-            onSelect,
             onRemoveItem,
             popupTitle,
             colorTheme,
             isSelectSingle,
-            cancelButtonText,
-            selectButtonText,
             searchPlaceHolderText,
             selectedTitlteStyle,
-            buttonTextStyle,
-            buttonStyle,
             showSearchBox,
         } = this.props;
-        let {show, selectedItem, preSelectedItem} = this.state;
+        let {show, preSelectedItem} = this.state;
         return (
             <TouchableOpacity
                 onPress={this.showModal}
@@ -358,7 +341,8 @@ Select2.propTypes = {
     cancelButtonText: PropTypes.string,
     selectButtonText: PropTypes.string,
     onItemSelected: PropTypes.func,
-}
+    defaultSelectedId: PropTypes.array,
+};
 
 //make this component available to the app
 export default Select2;
