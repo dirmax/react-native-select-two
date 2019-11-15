@@ -63,8 +63,6 @@ class Select2 extends Component {
             }
         });
 
-        console.log('data', data);
-
         this.setState({preSelectedItem: selectedItems});
     }
 
@@ -87,7 +85,7 @@ class Select2 extends Component {
     onItemSelected = (item, isSelectSingle) => {
         let selectedItem = [];
         let { data } = this.state;
-        item.checked = !item.checked;
+        item.checked = isSelectSingle ? true : !item.checked;
         for (let index in data) {
             if (data[index].id === item.id) {
                 data[index] = item;
